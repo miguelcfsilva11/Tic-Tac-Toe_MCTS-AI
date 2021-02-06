@@ -1,6 +1,7 @@
 import random
 import math
 import copy
+
 class tree:
     def __init__(self, board):
         self.board = board
@@ -10,35 +11,29 @@ class tree:
 class mcts:
     def search(self, mx, player,):
         root = tree(mx)
-        for i in range(1000):
+        for i in range(10000):
             leaf = mcts.expand(self, root.board, player, root)
             result = mcts.rollout(self, leaf)
             mcts.backpropagate(self, leaf, root, result)
-        return mcts.best_child(self, root)
+        return mcts.best_child(self, root).board
 
     def expand(self, mx, player, root):
-        leaf_potential = root
         plays = mcts.generate_states(self, mx, player)
         if root.visits == 0:
             for j in plays:
                 root.children.append(j)
-        for j in plays:
-            if mcts.final(self, j.board, player):
-                return j
-        score = 0
         for j in root.children:
             if j.visits == 0:
                 return j
-            j.score = mcts.calculate_score(self, player, j.score, j.visits, root.visits)
-            if j.score > score:
-                score = j.score
-                leaf_potential = j
-        return leaf_potential
+        for j in plays:
+            if mcts.final(self, j.board, player):
+                return j
+        return mcts.best_child(self, root)
 
     def rollout(self, leaf):
         mx = leaf.board
         aux = 1
-        while mcts.final(self, mx, "O") != True or mcts.final(self, mx, "X") != True:
+        while mcts.final(self, mx, "O") != True:
             if aux == 1:
                 possible_states = []
                 for i in range(len(mx)):
@@ -47,12 +42,21 @@ class mcts:
                             option = copy.deepcopy(mx)
                             option[i][k] = "X"
                             possible_states.append(option)
+
                 if len(possible_states) == 1:
-                    choice = 0
+                    mx = possible_states[0]
                 else:
-                    choice = random.randrange(0, len(possible_states)-1)
-                mx = possible_states[choice]
-            if aux == 0:
+                    found = False
+                    for j in possible_states:
+                        if mcts.final(self, j, "X"): #check if there's a state where the adversary wins
+                            mx = j
+                            found = True
+                    if found == False:
+                        choice = random.randrange(0, len(possible_states) - 1)
+                        mx = possible_states[choice]
+                if mcts.final(self, mx, "X") == True:
+                    break
+            elif aux == 0:
                 possible_states = []
                 for i in range(len(mx)):
                     for k in range(len(mx[i])):
@@ -61,30 +65,37 @@ class mcts:
                             option[i][k] = "O"
                             possible_states.append(option)
                 if len(possible_states) == 1:
-                    choice = 0
+                    mx = possible_states[0]
                 else:
-                    choice = random.randrange(0, len(possible_states)-1)
-                mx = possible_states[choice]
+                    found = False
+                    for j in possible_states:
+                        if mcts.final(self, j, "O") and found == False: #check if there's a state where he wins
+                            mx = j
+                            found = True
+                    if not found:
+                        choice = random.randrange(0, len(possible_states) - 1)
+                        mx = possible_states[choice]
+
             aux += 1
             aux = aux%2
-        if mcts.final(self, mx, "O"):
-            for i in range(len(mx)):
-                for k in range(len(mx[i])):
-                    if mx[i][k] == "-":
-                        return 1
-            return 0.5
-        elif mcts.final(self, mx, "X"):
+        if mcts.final(self, mx, "X"):
             for i in range(len(mx)):
                 for k in range(len(mx[i])):
                     if mx[i][k] == "-":
                         return -1
-            return 0.5
+            return 0.3
+        elif mcts.final(self, mx, "O"):
+            for i in range(len(mx)):
+                for k in range(len(mx[i])):
+                    if mx[i][k] == "-":
+                        return 1
+
 
     def backpropagate(self, leaf, root, result):
         leaf.score += result
         leaf.visits += 1
-        root.visits += 1
-        leaf = root
+        if root.visits == 0:
+            root.visits += 1
 
     def generate_states(self, mx, player):
         possible_states = []
@@ -126,17 +137,16 @@ class mcts:
             return possible_draw
         return win
 
-    def calculate_score(self, player, score, child_visits, parent_visits):
-        c = 2
-        return score / child_visits + c * math.sqrt(math.log(parent_visits / child_visits))
+    def calculate_score(self, score, child_visits, parent_visits, c):
+        return score / child_visits + c * math.sqrt(math.log(parent_visits) / child_visits)
 
     def best_child(self, root):
-        treshold = 0
+        treshold = -100000
         for j in root.children:
-            if j.visits >= treshold:
+            potential = mcts.calculate_score(self, j.score, j.visits, root.visits, 2)
+            if potential > treshold:
                 win_choice = j
-                treshold = j.visits
-        return win_choice.board
+                treshold = potential
+        return win_choice
 
-#todo when generating states on rollout, make a function to avoid repetitive code
-#todo don't forget to optimize the bot, it is really weak as of now
+#todo the AI takes too long for each play, optimize that by finding the optimal approach in the rollout phase
