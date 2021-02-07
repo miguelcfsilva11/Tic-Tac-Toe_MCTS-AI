@@ -14,7 +14,7 @@ class mcts:
             leaf = mcts.expand(self, root.board, player, root)
             result = mcts.rollout(self, leaf)
             mcts.backpropagate(self, leaf, root, result)
-        return mcts.best_child(self, root).board
+        return mcts.best_child_final(self, root).board
 
     def expand(self, mx, player, root):
         plays = mcts.generate_states(self, mx, player) #all possible plays
@@ -38,12 +38,23 @@ class mcts:
                 possible_nodes = mcts.generate_states(self, mx, "X")
                 for i in possible_nodes:
                     possible_states.append(i.board)
-                if len(possible_states) == 1: mx =  possible_states[0]
+                if len(possible_states) == 1:
+                    mx =  possible_states[0]
+                    if mcts.final(self, mx, "X"):
+                        for i in range(len(mx)):
+                            for k in range(len(mx[i])):
+                                if mx[i][k] == "-":
+                                    return -1  # loss
+                        return 0.5  # tie
                 else:
-                    choice = random.randrange(0, len(possible_states) - 1)
+                    choice = random.randrange(0, len(possible_states))
                     mx = possible_states[choice]
-                if mcts.final(self, mx, "X"): #The play by "X" finished the game
-                    break
+                    if mcts.final(self, mx, "X"):
+                        for i in range(len(mx)):
+                            for k in range(len(mx[i])):
+                                if mx[i][k] == "-":
+                                    return -1  # loss
+                        return 0  # tie
             elif aux == 0: # "O" playing
                 possible_states = []
                 possible_nodes = mcts.generate_states(self, mx, "O")
@@ -51,21 +62,15 @@ class mcts:
                     possible_states.append(i.board)
                 if len(possible_states) == 1: mx =  possible_states[0]
                 else:
-                    choice = random.randrange(0, len(possible_states) - 1)
+                    choice = random.randrange(0, len(possible_states))
                     mx = possible_states[choice]
             aux += 1
             aux = aux%2
-        if mcts.final(self, mx, "X"):
-            for i in range(len(mx)):
-                for k in range(len(mx[i])):
-                    if mx[i][k] == "-":
-                        return -1 #loss
-            return 0 #tie
-        elif mcts.final(self, mx, "O"):
-            for i in range(len(mx)):
-                for k in range(len(mx[i])):
-                    if mx[i][k] == "-":
-                        return 1 #win
+        for i in range(len(mx)):
+            for k in range(len(mx[i])):
+                if mx[i][k] == "-":
+                    return 1 #win
+        return 0
 
 
     def backpropagate(self, leaf, root, result): # updating our prospects stats
@@ -119,10 +124,15 @@ class mcts:
     def best_child(self, root): #returns most promising node
         treshold = -1*10**6
         for j in root.children:
-            potential = mcts.calculate_score(self, j.score, j.visits, root.visits, 2)
+            potential = mcts.calculate_score(self, j.score, j.visits, root.visits, 1.414)
             if potential > treshold:
                 win_choice = j
                 treshold = potential
         return win_choice
-
-#todo the AI takes too long for each play, optimize that by finding the optimal approach in the rollout phase
+    def best_child_final(self,root):
+        treshold = -1*10**6
+        for j in root.children:
+            if j.visits > treshold:
+                win_choice = j
+                treshold = j.visits
+        return win_choice
