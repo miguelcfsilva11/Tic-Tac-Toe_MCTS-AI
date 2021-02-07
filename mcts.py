@@ -1,7 +1,6 @@
 import random
 import math
 import copy
-
 class tree:
     def __init__(self, board):
         self.board = board
@@ -11,94 +10,71 @@ class tree:
 class mcts:
     def search(self, mx, player,):
         root = tree(mx)
-        for i in range(10000):
+        for i in range(1200):
             leaf = mcts.expand(self, root.board, player, root)
             result = mcts.rollout(self, leaf)
             mcts.backpropagate(self, leaf, root, result)
         return mcts.best_child(self, root).board
 
     def expand(self, mx, player, root):
-        plays = mcts.generate_states(self, mx, player)
+        plays = mcts.generate_states(self, mx, player) #all possible plays
         if root.visits == 0:
             for j in plays:
-                root.children.append(j)
+                root.children.append(j) #create child_nodes in case they havent been created yet
         for j in root.children:
             if j.visits == 0:
-                return j
+                return j #first iterations of the loop
         for j in plays:
             if mcts.final(self, j.board, player):
                 return j
-        return mcts.best_child(self, root)
+        return mcts.best_child(self, root) #choose the one with most potential
 
     def rollout(self, leaf):
         mx = leaf.board
         aux = 1
         while mcts.final(self, mx, "O") != True:
-            if aux == 1:
+            if aux == 1: # "X" playing
                 possible_states = []
-                for i in range(len(mx)):
-                    for k in range(len(mx[i])):
-                        if mx[i][k] == "-":
-                            option = copy.deepcopy(mx)
-                            option[i][k] = "X"
-                            possible_states.append(option)
-
-                if len(possible_states) == 1:
-                    mx = possible_states[0]
+                possible_nodes = mcts.generate_states(self, mx, "X")
+                for i in possible_nodes:
+                    possible_states.append(i.board)
+                if len(possible_states) == 1: mx =  possible_states[0]
                 else:
-                    found = False
-                    for j in possible_states:
-                        if mcts.final(self, j, "X"): #check if there's a state where the adversary wins
-                            mx = j
-                            found = True
-                    if found == False:
-                        choice = random.randrange(0, len(possible_states) - 1)
-                        mx = possible_states[choice]
-                if mcts.final(self, mx, "X") == True:
+                    choice = random.randrange(0, len(possible_states) - 1)
+                    mx = possible_states[choice]
+                if mcts.final(self, mx, "X"): #The play by "X" finished the game
                     break
-            elif aux == 0:
+            elif aux == 0: # "O" playing
                 possible_states = []
-                for i in range(len(mx)):
-                    for k in range(len(mx[i])):
-                        if mx[i][k] == "-":
-                            option = copy.deepcopy(mx)
-                            option[i][k] = "O"
-                            possible_states.append(option)
-                if len(possible_states) == 1:
-                    mx = possible_states[0]
+                possible_nodes = mcts.generate_states(self, mx, "O")
+                for i in possible_nodes:
+                    possible_states.append(i.board)
+                if len(possible_states) == 1: mx =  possible_states[0]
                 else:
-                    found = False
-                    for j in possible_states:
-                        if mcts.final(self, j, "O") and found == False: #check if there's a state where he wins
-                            mx = j
-                            found = True
-                    if not found:
-                        choice = random.randrange(0, len(possible_states) - 1)
-                        mx = possible_states[choice]
-
+                    choice = random.randrange(0, len(possible_states) - 1)
+                    mx = possible_states[choice]
             aux += 1
             aux = aux%2
         if mcts.final(self, mx, "X"):
             for i in range(len(mx)):
                 for k in range(len(mx[i])):
                     if mx[i][k] == "-":
-                        return -1
-            return 0.3
+                        return -1 #loss
+            return 0 #tie
         elif mcts.final(self, mx, "O"):
             for i in range(len(mx)):
                 for k in range(len(mx[i])):
                     if mx[i][k] == "-":
-                        return 1
+                        return 1 #win
 
 
-    def backpropagate(self, leaf, root, result):
+    def backpropagate(self, leaf, root, result): # updating our prospects stats
         leaf.score += result
         leaf.visits += 1
-        if root.visits == 0:
-            root.visits += 1
+        root.visits += 1
 
     def generate_states(self, mx, player):
-        possible_states = []
+        possible_states = [] #generate child_nodes
         for i in range(len(mx)):
             for k in range(len(mx[i])):
                 if mx[i][k] == "-":
@@ -108,14 +84,14 @@ class mcts:
                     possible_states.append(child_node)
         return possible_states
 
-    def final(self,mx, player):
+    def final(self,mx, player): #check if game is won
         possible_draw = True
         win = False
-        for i in mx:
+        for i in mx: #lines
             if i == [player, player, player]:
                 win = True
                 possible_draw = False
-        if mx[0][0] == player:
+        if mx[0][0] == player: #diagonals
             if mx[1][1] == player:
                 if mx[2][2] == player:
                     win = True
@@ -125,7 +101,7 @@ class mcts:
                 if mx[2][0] == player:
                     win = True
                     possible_draw = False
-        for i in range(3):
+        for i in range(3): #collumns
             if mx[0][i] == player and mx[1][i] == player and mx[2][i] == player:
                 win = True
                 possible_draw = False
@@ -137,11 +113,11 @@ class mcts:
             return possible_draw
         return win
 
-    def calculate_score(self, score, child_visits, parent_visits, c):
+    def calculate_score(self, score, child_visits, parent_visits, c): #UCB1
         return score / child_visits + c * math.sqrt(math.log(parent_visits) / child_visits)
 
-    def best_child(self, root):
-        treshold = -100000
+    def best_child(self, root): #returns most promising node
+        treshold = -1*10**6
         for j in root.children:
             potential = mcts.calculate_score(self, j.score, j.visits, root.visits, 2)
             if potential > treshold:
