@@ -130,7 +130,6 @@ class mcts:
     def best_child(self,root):
         threshold = -1*10**6
         for j in root.children:
-            print(j.visits)
             if j.visits > threshold:
                 win_choice = j
                 threshold = j.visits
