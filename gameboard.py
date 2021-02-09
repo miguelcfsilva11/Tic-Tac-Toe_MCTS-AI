@@ -2,6 +2,7 @@ import math
 import random
 from copy import deepcopy
 from mcts import *
+import os
 mx = [["-","-","-"],
       ["-","-","-"],
       ["-","-","-"]]
@@ -31,8 +32,9 @@ class board:
     def move(self, x, y):
         mx[x][y] = self.player1
     def output_matrix(self,mx):
-        printable_matrix = ("{0}\n{1}\n{2}").format(mx[0], mx[1], mx[2])
-        print(printable_matrix, "\n")
+        os.system('cls' if os.name == 'nt' else 'clear')
+        printable_matrix = ("\t{0}\n\t{1}\n\t{2}").format(mx[0], mx[1], mx[2])
+        print("\n" + printable_matrix + "\n")
     def final(self,mx, player):
         global playable
         possible_draw = 1
@@ -76,7 +78,8 @@ class board:
         print("\nHey! Let's play Tic-Tac-Toe! What's your first move?\nTell us in the format of (x,y) coordinates.\n"
               "To quit write the word 'stop'."
               "\nTake a look at the board!\n")
-        board.output_matrix(mx)
+        printable_matrix = ("\t{0}\n\t{1}\n\t{2}").format(mx[0], mx[1], mx[2])
+        print("\n" + printable_matrix + "\n")
         while playable:
             try:
                 human_move = input("Choose your position: ")

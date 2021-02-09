@@ -25,9 +25,6 @@ class mcts:
         for j in root.children:
             if j.visits == 0:
                 return j #first iterations of the loop
-        for j in plays:
-            if mcts.final(self, j.board, player):
-                return j
         return mcts.expansion_choice(self, root) #choose the one with most potential
 
     def rollout(self, leaf):
@@ -48,9 +45,11 @@ class mcts:
                 else:
                     choice = random.randrange(0, len(possible_states))
                     mx = possible_states[choice]
+                    print(mcts.final(self, mx, "X"))
                     if mcts.final(self, mx, "X") == 2:
+                        print("loss")
                         return -1
-                    elif mcts.final(self, mx, "X") == 1:
+                    if mcts.final(self, mx, "X") == 1:
                         return 0.5
             elif swap == 0: # "O" playing
                 possible_states = []
@@ -61,10 +60,12 @@ class mcts:
                 else:
                     choice = random.randrange(0, len(possible_states))
                     mx = possible_states[choice]
+            print("got here")
             swap += 1
             swap = swap % 2
         if mcts.final(self, mx, "O") == 2:
-            return 0.5 #win
+            print("won")
+            return 1 #win
         elif mcts.final(self, mx, "O") == 1:
             return 0.5
 
@@ -72,6 +73,7 @@ class mcts:
     def backpropagate(self, leaf, root, result): # updating our prospects stats
         leaf.score += result
         leaf.visits += 1
+        print(leaf.visits)
         root.visits += 1
 
     def generate_states(self, mx, player):
@@ -131,6 +133,7 @@ class mcts:
     def best_child(self,root):
         threshold = -1*10**6
         for j in root.children:
+            print(j.visits)
             if j.visits > threshold:
                 win_choice = j
                 threshold = j.visits
