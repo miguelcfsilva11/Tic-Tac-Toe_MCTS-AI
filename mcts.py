@@ -70,7 +70,6 @@ class mcts:
     def backpropagate(self, leaf, root, result): # updating our prospects stats
         leaf.score += result
         leaf.visits += 1
-        print(leaf.visits)
         root.visits += 1
 
     def generate_states(self, mx, player):
