@@ -47,7 +47,6 @@ class mcts:
                     mx = possible_states[choice]
                     print(mcts.final(self, mx, "X"))
                     if mcts.final(self, mx, "X") == 2:
-                        print("loss")
                         return -1
                     if mcts.final(self, mx, "X") == 1:
                         return 0.5
@@ -60,11 +59,9 @@ class mcts:
                 else:
                     choice = random.randrange(0, len(possible_states))
                     mx = possible_states[choice]
-            print("got here")
             swap += 1
             swap = swap % 2
         if mcts.final(self, mx, "O") == 2:
-            print("won")
             return 1 #win
         elif mcts.final(self, mx, "O") == 1:
             return 0.5
