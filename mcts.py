@@ -39,17 +39,16 @@ class mcts:
                 if len(possible_states) == 1:
                     mx =  possible_states[0]
                     if mcts.final(self, mx, "X") == 2:
-                        return -1 #loss
+                        return -1.4 #loss
                     elif mcts.final(self, mx, "X") == 1:
-                        return 0.5 #tie
+                        return 0.4 #tie
                 else:
                     choice = random.randrange(0, len(possible_states))
                     mx = possible_states[choice]
-                    print(mcts.final(self, mx, "X"))
                     if mcts.final(self, mx, "X") == 2:
-                        return -1
+                        return -1.4
                     if mcts.final(self, mx, "X") == 1:
-                        return 0.5
+                        return 0.4
             elif swap == 0: # "O" playing
                 possible_states = []
                 possible_nodes = mcts.generate_states(self, mx, "O")
@@ -62,9 +61,9 @@ class mcts:
             swap += 1
             swap = swap % 2
         if mcts.final(self, mx, "O") == 2:
-            return 1 #win
+            return 0.8 #win
         elif mcts.final(self, mx, "O") == 1:
-            return 0.5
+            return 0.4
 
 
     def backpropagate(self, leaf, root, result): # updating our prospects stats
